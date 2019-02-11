@@ -29,10 +29,12 @@ foreach(@clust){
 	$index++;
 }
 
-foreach my $number (@empty){
+#foreach my $number (@empty){
+foreach (0 .. $#empty){
+	my $number = $empty[$_];
 	my $offset = $number * 0x200;
 	seek(F, $offset,0);
-	read(F, $buf, ($byte_sec * $sec_clust));
+	read(F, $buf, ($byte_sec * $sec_clust ));
 	&find($number,$buf);
 }
 
@@ -43,7 +45,22 @@ sub find()
 	my $signature_b = unpack("N",$buf);
 	my $ret = &format($signature_b,$signature_l);
 	print "$number => $ret \n" if ($ret);
+	&zip($buf) if($signature_b == 0x504B0304);
 	
+}
+
+sub zip()
+{
+	my $buf = shift;
+	my $count = length($buf);
+	my $index = 0;
+	while ($count > $index){
+		my $tt = $index +26;
+		my ($dummy1,$tmp) = unpack ("A$tt v",$buf);
+		my($sig, $dummy,$data, $len1, $len2, $name) = unpack("N A18 V v v A$tmp",$buf);
+		print "\t Zip >>  $name\n";
+		$index += $len1+$len2+$data+22;
+	}
 }
 sub format()
 {
@@ -122,7 +139,7 @@ sub format()
 	$hash{0x4D563243} =  'MLS';
 	$hash{0x5041434B} =  'PAK';
 	$hash{0x50455354} =  'DAT';
-	$hash{0x504B0304} =  'ZIP,||DOCX';
+	$hash{0x504B0304} =  'ZIP';
 	$hash{0x504D4343} =  'GRP';
 	$hash{0x51454C20} =  'QEL';
 	$hash{0x514649FB} =  'IMG';
