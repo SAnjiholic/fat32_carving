@@ -5,17 +5,7 @@ my $filename = $ARGV[0];
 
 open(F,"<$filename") or die("Unable to open file $filename, $!");
 read(F, my $buf, 0x200);
-
 my ($dummy1, $byte_sec, $sec_clust, $reserved, $fat_count, $dummy2,$hidden_sec, $total_sec, $fat_size, $dummy3, $root_dir) = unpack("A11 v C1 v C1 A11 V  V V A4 V",$buf); 
-
-printf ("byte : 0x%04x\n",$byte_sec);
-printf ("sec_clust : 0x%04x\n", $sec_clust);
-printf ("reserved : 0x%04x\n", $reserved);
-printf ("fat count : 0x%02x\n", $fat_count);
-printf ("hidden : 0x%08x\n", $hidden_sec);
-printf ("total_sec : 0x%08x\n", $total_sec);
-printf ("fat_size : 0x%08x\n", $fat_size);
-printf ("root_dir : 0x%08x\n", $root_dir); 
 
 seek(F,($reserved * $byte_sec),0);
 read(F, $buf, ($fat_size * $byte_sec));
@@ -29,7 +19,6 @@ foreach(@clust){
 	$index++;
 }
 
-#foreach my $number (@empty){
 foreach (0 .. $#empty){
 	my $number = $empty[$_];
 	my $offset = $number * 0x200;
@@ -42,11 +31,14 @@ sub find()
 {
 	my ($number,$buf) = @_;
 	my $signature_l = unpack("V",$buf);
-	my $signature_b = unpack("N",$buf);
+	my ($signature_b) = unpack("N",$buf);
+	my ($signature_b2) = unpack("N2",$buf);
 	my $ret = &format($signature_b,$signature_l);
 	print "$number => $ret \n" if ($ret);
+
 	&zip($buf) if($signature_b == 0x504B0304);
-	
+
+	print "$number => Office \n" if ($signature_b2 == 0xd0cf11e0a1b11ae1);	
 }
 
 sub zip()
@@ -266,7 +258,5 @@ sub format()
 	if ($hash{$bi}){return $hash{$bi}}
 	if ($hash{$li}){return $hash{$li}} 
 	return undef;
-
-
 }
 
